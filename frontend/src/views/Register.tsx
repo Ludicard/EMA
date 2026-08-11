@@ -48,7 +48,7 @@ export default function Register() {
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-10 sm:px-6 lg:px-8 selection:bg-primary selection:text-white">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center mb-6">
         <h2 className="text-center text-3xl font-extrabold text-white tracking-tight">
-          Crea tu cuenta en EMA
+          Crea tu cuenta en <span style={{ fontFamily: "'Playfair Display', serif" }}>EMA</span>
         </h2>
         <p className="mt-2 text-center text-sm text-slate-400">
           ¿Ya tienes cuenta?{' '}

@@ -12,7 +12,7 @@ export default function Landing() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-xl">
                 E
               </div>
-              <span className="font-bold text-xl tracking-tight">EMA</span>
+              <span className="font-bold text-xl tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>EMA</span>
             </div>
             <div className="flex items-center gap-4">
               <Link to="/login" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">

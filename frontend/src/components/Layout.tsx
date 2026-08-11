@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
               E
             </div>
-            <span className="font-bold text-xl tracking-tight text-slate-900">EMA</span>
+            <span className="font-bold text-xl tracking-tight text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>EMA</span>
           </Link>
         </div>
         

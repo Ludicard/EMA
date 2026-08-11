@@ -44,7 +44,7 @@ export default function Login() {
             [ LOGO ]
           </div>
           
-          <h2 className="text-center text-3xl font-extrabold text-slate-900 tracking-tight mb-6">
+          <h2 className="text-center text-3xl font-extrabold text-slate-900 tracking-tight mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
             EMA
           </h2>
 
