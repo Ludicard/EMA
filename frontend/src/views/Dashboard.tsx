@@ -1,91 +1,135 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Users, LogOut, Menu, Bell, Building2, Plus, UserPlus } from 'lucide-react';
+import { Users, FileText, CheckCircle, Clock, AlertCircle, TrendingUp } from 'lucide-react';
+import { apiClient } from '../api/client';
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await apiClient.get('/dashboard/stats');
+        setStats(res.data);
+      } catch (e) {
+        console.error('Error fetching stats:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+  }
+
+  if (!stats) {
+    return <div className="text-center text-red-500 py-10">No se pudieron cargar las estadísticas. Asegúrate de tener una empresa configurada.</div>;
+  }
+
+  const formatMoney = (amount: number) => `$${Number(amount).toFixed(2)}`;
+
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar (Vacío según requerimientos, pero dejamos la estructura lista) */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-slate-100">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-              E
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900">Resumen Financiero</h1>
+        <p className="text-slate-500">Un vistazo rápido al estado de tus cuentas.</p>
+      </div>
+
+      {/* Main KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+              <TrendingUp className="w-6 h-6" />
             </div>
-            <span className="font-bold text-xl tracking-tight text-slate-900">EMA</span>
-          </Link>
-        </div>
-        
-        <nav className="flex-1 px-4 py-6 space-y-1">
-          <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 bg-primary/10 text-primary rounded-xl font-medium">
-            <LayoutDashboard className="w-5 h-5" />
-            Inicio
-          </Link>
-          {/* Módulos futuros irían aquí */}
-          <div className="px-3 py-2.5 text-slate-400 flex items-center gap-3 font-medium text-sm cursor-not-allowed">
-            <Users className="w-5 h-5" />
-            Usuarios (Próximamente)
-          </div>
-        </nav>
-
-        <div className="p-4 border-t border-slate-100">
-          <Link to="/" className="flex items-center gap-3 px-3 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium">
-            <LogOut className="w-5 h-5" />
-            Cerrar Sesión
-          </Link>
-        </div>
-      </aside>
-
-      {/* Contenido Principal */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Navbar */}
-        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
-          <button className="md:hidden p-2 text-slate-500 hover:text-slate-700">
-            <Menu className="w-6 h-6" />
-          </button>
-          
-          <div className="flex items-center gap-4 ml-auto">
-            <button className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors">
-              <Bell className="w-5 h-5" />
-            </button>
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-white cursor-pointer">
-              JP
-            </div>
-          </div>
-        </header>
-
-        {/* Zona de contenido */}
-        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center bg-slate-50/50">
-          <div className="text-center animate-fade-in-up max-w-2xl w-full">
-            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner border border-primary/20">
-              <Building2 className="w-10 h-10 text-primary" />
-            </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-4">
-              Aún no perteneces a ninguna empresa
-            </h1>
-            <p className="text-slate-500 mb-10 max-w-lg mx-auto">
-              Para comenzar a utilizar EMA, necesitas crear el entorno de tu empresa o unirte a una existente mediante un código de invitación.
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-lg mx-auto">
-              <button className="flex flex-col items-center justify-center p-8 border-2 border-slate-200 rounded-2xl hover:border-primary hover:bg-slate-50 transition-all group cursor-pointer shadow-sm hover:shadow-md">
-                <div className="w-14 h-14 bg-white shadow-sm rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Plus className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">Crear Empresa</h3>
-                <p className="text-sm text-slate-500 text-center">Configura un nuevo espacio de trabajo desde cero</p>
-              </button>
-
-              <button className="flex flex-col items-center justify-center p-8 border-2 border-slate-200 rounded-2xl hover:border-primary hover:bg-slate-50 transition-all group cursor-pointer shadow-sm hover:shadow-md">
-                <div className="w-14 h-14 bg-white shadow-sm rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <UserPlus className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">Unirse a Empresa</h3>
-                <p className="text-sm text-slate-500 text-center">Ingresa con una invitación de tu equipo</p>
-              </button>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Total Facturado</p>
+              <h3 className="text-2xl font-bold text-slate-900">{formatMoney(stats.totalInvoiced)}</h3>
             </div>
           </div>
         </div>
-      </main>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Total Cobrado</p>
+              <h3 className="text-2xl font-bold text-slate-900">{formatMoney(stats.totalPaid)}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Pendiente de Cobro</p>
+              <h3 className="text-2xl font-bold text-slate-900">{formatMoney(stats.totalPending)}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-red-600">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Total Vencido</p>
+              <h3 className="text-2xl font-bold text-slate-900">{formatMoney(stats.totalOverdue)}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Secondary Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between hover:border-primary transition-colors group">
+          <div>
+            <div className="w-10 h-10 bg-slate-100 group-hover:bg-primary/10 rounded-lg flex items-center justify-center mb-4 transition-colors">
+              <Users className="w-5 h-5 text-slate-500 group-hover:text-primary transition-colors" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-1">Clientes</h3>
+            <p className="text-3xl font-extrabold text-slate-900">{stats.totalClients}</p>
+          </div>
+          <Link to="/clients" className="text-sm font-medium text-primary mt-4 inline-block hover:underline">Ver clientes &rarr;</Link>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between hover:border-primary transition-colors group">
+          <div>
+            <div className="w-10 h-10 bg-slate-100 group-hover:bg-primary/10 rounded-lg flex items-center justify-center mb-4 transition-colors">
+              <FileText className="w-5 h-5 text-slate-500 group-hover:text-primary transition-colors" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-1">Facturas Totales</h3>
+            <p className="text-3xl font-extrabold text-slate-900">{stats.totalInvoices}</p>
+          </div>
+          <Link to="/invoices" className="text-sm font-medium text-primary mt-4 inline-block hover:underline">Ir a facturas &rarr;</Link>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Estado de Facturas</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-slate-500 flex items-center gap-2"><Clock className="w-4 h-4 text-yellow-500"/> Pendientes</span>
+                <span className="font-bold text-slate-900">{stats.pendingCount}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-slate-500 flex items-center gap-2"><AlertCircle className="w-4 h-4 text-red-500"/> Vencidas</span>
+                <span className="font-bold text-slate-900">{stats.overdueCount}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

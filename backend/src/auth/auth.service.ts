@@ -23,13 +23,20 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
+    // Create Demo Company for testing the MVP
+    const company = await this.prisma.company.create({
+      data: {
+        name: `Empresa Demo - ${dto.name}`,
+      },
+    });
+
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         name: dto.name,
         password: hashedPassword,
         role: 'ADMIN_EMPRESA',
-        companyId: null, // Sin empresa inicialmente
+        companyId: company.id,
       },
     });
 
@@ -59,11 +66,11 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: 'JWT_ACCESS_SECRET', // TODO: Use env
+        secret: process.env.JWT_ACCESS_SECRET || 'JWT_ACCESS_SECRET',
         expiresIn: '15m',
       }),
       this.jwtService.signAsync(payload, {
-        secret: 'JWT_REFRESH_SECRET', // TODO: Use env
+        secret: process.env.JWT_REFRESH_SECRET || 'JWT_REFRESH_SECRET',
         expiresIn: '7d',
       }),
     ]);

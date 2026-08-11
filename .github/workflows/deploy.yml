@@ -1,0 +1,83 @@
+name: Deploy EMA to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            echo "Conectado al VPS. Iniciando deployment..."
+            
+            cd /opt/proyectos/EMA
+            
+            # 1. Comprobar si hay cambios locales rastreados
+            # git status --porcelain --untracked-files=no devolverá vacío si el working tree (de archivos rastreados) está limpio
+            if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+              echo "Error: Existen modificaciones locales en archivos rastreados. Abortando deployment para proteger el estado del VPS."
+              exit 1
+            fi
+            
+            # 2. Obtener cambios y actualizar (fast-forward únicamente)
+            git fetch origin main
+            git merge origin/main --ff-only || {
+              echo "Error: No se pudo hacer fast-forward. Es posible que haya commits locales divergentes."
+              exit 1
+            }
+            
+            echo "Código actualizado correctamente. Construyendo imágenes..."
+            
+            # 3. Construir imágenes
+            docker compose build
+            
+            # 4. Levantar servicios
+            echo "Iniciando contenedores..."
+            docker compose up -d
+            
+            # 5. Esperar y comprobar estados explícitos
+            echo "Esperando 20 segundos para que los servicios se estabilicen..."
+            sleep 20
+            
+            echo "Verificando estado de los servicios..."
+            
+            # Verificar base de datos
+            DB_ID=$(docker compose ps -q db)
+            DB_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' $DB_ID)
+            if [ "$DB_HEALTH" != "healthy" ]; then
+              echo "Error: La base de datos no alcanzó el estado 'healthy' (Estado actual: $DB_HEALTH)"
+              docker compose logs --tail=100
+              exit 1
+            fi
+            
+            # Verificar backend
+            BACKEND_ID=$(docker compose ps -q backend)
+            BACKEND_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' $BACKEND_ID)
+            if [ "$BACKEND_HEALTH" != "healthy" ]; then
+              echo "Error: El backend no alcanzó el estado 'healthy' (Estado actual: $BACKEND_HEALTH)"
+              docker compose logs --tail=100
+              exit 1
+            fi
+            
+            # Verificar frontend
+            FRONTEND_ID=$(docker compose ps -q frontend)
+            FRONTEND_STATUS=$(docker inspect --format='{{.State.Status}}' $FRONTEND_ID)
+            if [ "$FRONTEND_STATUS" != "running" ]; then
+              echo "Error: El frontend no está 'running' (Estado actual: $FRONTEND_STATUS)"
+              docker compose logs --tail=100
+              exit 1
+            fi
+            
+            echo "Todos los servicios están operando correctamente."
+            echo "Deployment finalizado con éxito."
