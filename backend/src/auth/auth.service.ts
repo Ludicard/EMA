@@ -24,20 +24,13 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Create Demo Company for testing the MVP
-    const company = await this.prisma.company.create({
-      data: {
-        name: `Empresa Demo - ${dto.name}`,
-      },
-    });
-
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         name: dto.name,
         password: hashedPassword,
         role: Role.ADMIN_EMPRESA,
-        companyId: company.id,
+        companyId: null,
       },
     });
 
@@ -62,7 +55,7 @@ export class AuthService {
     return this.generateTokens(user.id, user.email, user.role, user.companyId);
   }
 
-  private async generateTokens(userId: string, email: string, role: string, companyId: string | null) {
+  async generateTokens(userId: string, email: string, role: string, companyId: string | null) {
     const payload = { sub: userId, email, role, companyId };
 
     const [accessToken, refreshToken] = await Promise.all([

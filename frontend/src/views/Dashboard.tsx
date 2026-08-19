@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, FileText, CheckCircle, Clock, AlertCircle, TrendingUp } from 'lucide-react';
+import { Users, FileText, CheckCircle, Clock, AlertCircle, TrendingUp, Building, Plus, LogIn, ArrowRight } from 'lucide-react';
 import { apiClient } from '../api/client';
 import {
   BarChart,
@@ -19,27 +19,174 @@ import {
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Onboarding states
+  const [isCreating, setIsCreating] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+  const [companyName, setCompanyName] = useState('');
+  const [joinCompanyId, setJoinCompanyId] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await apiClient.get('/dashboard/stats');
-        setStats(res.data);
-      } catch (e) {
-        console.error('Error fetching stats:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const res = await apiClient.get('/dashboard/stats');
+      setStats(res.data);
+    } catch (e: any) {
+      if (e.response?.status === 400 && e.response?.data?.message?.includes('empresa')) {
+        setStats({ noCompany: true });
+      } else {
+        console.error('Error fetching stats:', e);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateCompany = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionError('');
+    setActionLoading(true);
+    try {
+      const res = await apiClient.post('/companies', { name: companyName });
+      localStorage.setItem('accessToken', res.data.accessToken);
+      if (res.data.refreshToken) {
+        localStorage.setItem('refreshToken', res.data.refreshToken);
+      }
+      window.location.reload();
+    } catch (e: any) {
+      setActionError(e.response?.data?.message || 'Error al crear la empresa');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleJoinCompany = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionError('');
+    setActionLoading(true);
+    try {
+      const res = await apiClient.post('/companies/join', { companyId: joinCompanyId });
+      localStorage.setItem('accessToken', res.data.accessToken);
+      if (res.data.refreshToken) {
+        localStorage.setItem('refreshToken', res.data.refreshToken);
+      }
+      window.location.reload();
+    } catch (e: any) {
+      setActionError(e.response?.data?.message || 'Error al unirse a la empresa');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   if (loading) {
     return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
   }
 
+  // --- VISTA DE ONBOARDING ---
+  if (stats?.noCompany) {
+    return (
+      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 text-primary">
+            <Building className="w-10 h-10" />
+          </div>
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">¡Bienvenido a EMA!</h2>
+          <p className="mt-3 text-lg text-slate-500 max-w-2xl mx-auto">
+            Para comenzar a gestionar tu negocio, necesitas configurar tu espacio de trabajo. ¿Qué deseas hacer?
+          </p>
+        </div>
+
+        {actionError && (
+          <div className="mb-8 p-4 rounded-xl bg-red-50 text-red-600 text-sm font-medium border border-red-200 text-center">
+            {actionError}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Card Crear Empresa */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-primary/50 transition-colors flex flex-col">
+            <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
+              <Plus className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Crear una Empresa</h3>
+            <p className="text-slate-500 mb-6 flex-grow">
+              Ideal si eres el administrador o dueño y quieres configurar EMA desde cero.
+            </p>
+            
+            {isCreating ? (
+              <form onSubmit={handleCreateCompany} className="space-y-4">
+                <input
+                  type="text"
+                  required
+                  placeholder="Nombre de la empresa"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setIsCreating(false)} className="px-4 py-2 text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium transition-colors">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={actionLoading} className="flex-1 bg-slate-900 text-white py-2 rounded-xl font-semibold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+                    {actionLoading ? 'Creando...' : 'Crear'} <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button onClick={() => { setIsCreating(true); setIsJoining(false); }} className="w-full bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-slate-800 transition-colors">
+                Crear Empresa
+              </button>
+            )}
+          </div>
+
+          {/* Card Unirse a Empresa */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-primary/50 transition-colors flex flex-col">
+            <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-6">
+              <LogIn className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Unirse a una Empresa</h3>
+            <p className="text-slate-500 mb-6 flex-grow">
+              Si tu equipo ya usa EMA, pídeles el Código de Empresa (ID) para unirte a ellos.
+            </p>
+
+            {isJoining ? (
+              <form onSubmit={handleJoinCompany} className="space-y-4">
+                <input
+                  type="text"
+                  required
+                  placeholder="ID de la empresa"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                  value={joinCompanyId}
+                  onChange={(e) => setJoinCompanyId(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setIsJoining(false)} className="px-4 py-2 text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium transition-colors">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={actionLoading} className="flex-1 bg-slate-900 text-white py-2 rounded-xl font-semibold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+                    {actionLoading ? 'Verificando...' : 'Unirse'} <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button onClick={() => { setIsJoining(true); setIsCreating(false); }} className="w-full bg-slate-100 text-slate-900 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-colors border border-slate-300">
+                Tengo un código
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- VISTA NORMAL DE DASHBOARD ---
   if (!stats) {
-    return <div className="text-center text-red-500 py-10">No se pudieron cargar las estadísticas. Asegúrate de tener una empresa configurada.</div>;
+    return <div className="text-center text-red-500 py-10">No se pudieron cargar las estadísticas.</div>;
   }
 
   const formatMoney = (amount: number) => `$${Number(amount).toFixed(2)}`;

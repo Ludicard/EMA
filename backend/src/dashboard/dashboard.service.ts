@@ -5,7 +5,10 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getStats(companyId: string) {
+  async getStats(companyId: string | null) {
+    if (!companyId) {
+      return { noCompany: true };
+    }
     const clientsCount = await this.prisma.client.count({
       where: { companyId },
     });
