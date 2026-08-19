@@ -29,7 +29,7 @@ async function main() {
   console.log(`Creando datos de prueba para la empresa: ${user.company?.name}...`);
 
   // Crear 10 clientes falsos
-  const clients = [];
+  const clients: any[] = [];
   for (let i = 1; i <= 10; i++) {
     const client = await prisma.client.create({
       data: {
